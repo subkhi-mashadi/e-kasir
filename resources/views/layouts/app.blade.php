@@ -51,13 +51,18 @@
         </header>
 
         {{-- Content (scrollable independently) --}}
-        <main class="flex-1 overflow-y-auto p-6 @yield('main-class')">
+        <main class="flex-1 overflow-y-auto p-6 @yield('main-class') flex flex-col">
             @if(session('success'))
             <div class="mb-4 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 text-sm text-emerald-700">
                 {{ session('success') }}
             </div>
             @endif
-            @yield('content')
+            <div class="flex-1">
+                @yield('content')
+            </div>
+            <p class="mt-8 text-center text-xs text-slate-400">
+                Butuh bantuan? Hubungi <a href="mailto:support@postera.id" class="text-amber-600 hover:underline">support@postera.id</a>
+            </p>
         </main>
     </div>
 </div>

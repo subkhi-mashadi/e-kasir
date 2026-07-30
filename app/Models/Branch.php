@@ -10,7 +10,7 @@ class Branch extends Model
     use BelongsToCompany;
 
     protected $fillable = [
-        'company_id', 'name', 'code', 'phone', 'address', 'qris_image', 'is_active',
+        'company_id', 'name', 'code', 'phone', 'address', 'qris_image', 'qris_static_string', 'is_active',
     ];
 
     protected $casts = [

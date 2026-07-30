@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 
 class QrOrderController extends Controller
 {
@@ -29,6 +30,10 @@ class QrOrderController extends Controller
 
         $branch  = $table->branch;
         $company = $branch->company;
+
+        if (!$company->hasFeature('feature_qr_ordering')) {
+            return response(view('errors.feature-locked-public'), 403);
+        }
 
         $products = Product::withoutGlobalScopes()
             ->with([
@@ -225,12 +230,21 @@ class QrOrderController extends Controller
 
         $order = Order::withoutGlobalScopes()->with('items.modifiers')->find($orderId);
 
-        // For QRIS: generate dynamic QR via configured payment provider
         $midtransQrUrl = null;
         if ($data['preferred_payment'] === 'qris' && $order->midtrans_order_id) {
             $provider = $company->payment_provider ?? 'midtrans';
             try {
-                if ($provider === 'xendit') {
+                if ($provider === 'qris_static' && $company->qris_static_string) {
+                    $converter     = new \App\Services\QrisConverterService();
+                    $dynamicString = $converter->toDynamic(
+                        $company->qris_static_string,
+                        (int) round((float) $order->total),
+                        $order->midtrans_order_id
+                    );
+                    $png           = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(300)->margin(1)->generate($dynamicString);
+                    $midtransQrUrl = 'data:image/png;base64,' . base64_encode($png);
+                    $order->update(['midtrans_status' => 'pending']);
+                } elseif ($provider === 'xendit') {
                     $xendit        = new XenditService($company);
                     $result        = $xendit->chargeQris(
                         $order->midtrans_order_id,
@@ -264,10 +278,16 @@ class QrOrderController extends Controller
             }
         }
 
+        $isStaticQris = isset($provider) && $provider === 'qris_static' && $midtransQrUrl;
+        $isTestMode   = isset($provider) && $provider === 'xendit' && $order->xendit_qr_id
+            && str_starts_with($company->xendit_secret_key ?? '', 'xnd_development_');
+
         return response()->json([
             'order_id'          => $order->id,
             'preferred_payment' => $data['preferred_payment'],
             'qris_image_url'    => $midtransQrUrl,
+            'is_static_qris'    => $isStaticQris,
+            'xendit_test_mode'  => $isTestMode,
             'table_name'        => $table->name,
             'customer_name'     => $data['customer_name'],
             'subtotal'          => (float) $order->subtotal,
@@ -299,9 +319,17 @@ class QrOrderController extends Controller
             ->where('branch_id', $table->branch_id)
             ->firstOrFail();
 
-        // If already confirmed paid, return immediately
         if ($order->status === 'paid') {
             return response()->json(['paid' => true, 'status' => 'paid']);
+        }
+
+        if ($order->midtrans_status === 'deny' && $order->rejection_reason) {
+            return response()->json([
+                'paid'             => false,
+                'rejected'         => true,
+                'rejection_reason' => $order->rejection_reason,
+                'status'           => 'deny',
+            ]);
         }
 
         // Check with Midtrans directly (poll fallback)
@@ -352,6 +380,50 @@ class QrOrderController extends Controller
                 'reference' => $midtransResult->transaction_id ?? null,
             ]);
         });
+    }
+
+    public function uploadProof(Request $request, string $token, int $orderId)
+    {
+        $table = Table::with('branch')
+            ->where('qr_token', $token)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $order = Order::withoutGlobalScopes()
+            ->where('id', $orderId)
+            ->where('branch_id', $table->branch_id)
+            ->firstOrFail();
+
+        abort_if($order->status !== 'open', 422, 'Pesanan tidak valid.');
+
+        $request->validate(['proof' => 'required|image|max:5120']);
+
+        $path = $request->file('proof')->store('payment-proofs', 'public');
+        $order->update(['payment_proof' => $path, 'rejection_reason' => null, 'midtrans_status' => null]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function simulateXenditPayment(string $token, int $orderId)
+    {
+        $table = Table::with('branch.company')
+            ->where('qr_token', $token)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $order = Order::withoutGlobalScopes()
+            ->where('id', $orderId)
+            ->where('branch_id', $table->branch_id)
+            ->firstOrFail();
+
+        abort_if(! $order->xendit_qr_id, 422, 'No Xendit QR ID.');
+
+        $xendit = new XenditService($table->branch->company);
+        abort_unless($xendit->isTestMode(), 403, 'Simulate only available in test mode.');
+
+        $ok = $xendit->simulatePayment($order->xendit_qr_id, (int) $order->total);
+
+        return response()->json(['ok' => $ok]);
     }
 
     public function history(string $token)

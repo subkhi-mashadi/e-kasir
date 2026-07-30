@@ -23,12 +23,13 @@ class BranchController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'       => 'required|string|max:100',
-            'code'       => 'nullable|string|max:20',
-            'phone'      => 'nullable|string|max:20',
-            'address'    => 'nullable|string',
-            'qris_image' => 'nullable|image|max:2048',
-            'is_active'  => 'boolean',
+            'name'               => 'required|string|max:100',
+            'code'               => 'nullable|string|max:20',
+            'phone'              => 'nullable|string|max:20',
+            'address'            => 'nullable|string',
+            'qris_image'         => 'nullable|image|max:2048',
+            'qris_static_string' => 'nullable|string',
+            'is_active'          => 'boolean',
         ]);
         $company = auth()->user()->company;
         if ($company && ! $company->canAddBranch()) {

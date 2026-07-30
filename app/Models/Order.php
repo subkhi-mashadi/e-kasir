@@ -17,6 +17,7 @@ class Order extends Model
         'subtotal', 'discount_amount', 'tax_amount', 'total',
         'paid_amount', 'change_amount', 'points_earned', 'points_used',
         'notes', 'sync_uuid', 'synced_at', 'created_offline_at',
+        'xendit_qr_id', 'payment_proof', 'rejection_reason',
     ];
 
     protected $casts = [

@@ -322,9 +322,29 @@
                 </div>
             </div>
 
-            <div class="px-5 py-3 border-t border-slate-100 flex justify-between items-center">
-                <span class="text-slate-500 text-sm">Total</span>
-                <span class="font-black text-amber-600 text-xl" x-text="'Rp ' + fmt(cartTotal)"></span>
+            <div class="px-5 py-3 border-t border-slate-100 space-y-1.5">
+                <template x-if="{{ $company->tax_rate > 0 ? 'true' : 'false' }}">
+                    <div>
+                        <div class="flex justify-between text-sm text-slate-500">
+                            <span>Subtotal</span>
+                            <span x-text="'Rp ' + fmt(cartTotal)"></span>
+                        </div>
+                        <div class="flex justify-between text-sm text-slate-500">
+                            <span>PPN {{ $company->tax_inclusive ? '(sudah termasuk)' : round($company->tax_rate) . '%' }}</span>
+                            <span x-text="'Rp ' + fmt({{ $company->tax_inclusive ? 'Math.round(cartTotal - cartTotal / (1 + ' . ($company->tax_rate / 100) . '))' : 'Math.round(cartTotal * ' . ($company->tax_rate / 100) . ')' }})"></span>
+                        </div>
+                        <div class="flex justify-between text-base font-black text-amber-600 pt-1.5 border-t border-slate-100 mt-1">
+                            <span>Total</span>
+                            <span x-text="'Rp ' + fmt({{ $company->tax_inclusive ? 'cartTotal' : 'Math.round(cartTotal * ' . (1 + $company->tax_rate / 100) . ')' }})"></span>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="{{ $company->tax_rate > 0 ? 'false' : 'true' }}">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500 text-sm">Total</span>
+                        <span class="font-black text-amber-600 text-xl" x-text="'Rp ' + fmt(cartTotal)"></span>
+                    </div>
+                </template>
             </div>
 
             <div class="px-5 pb-6">
@@ -347,15 +367,28 @@
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center">
             <div class="text-4xl mb-2">📱</div>
             <h2 class="font-black text-slate-800 text-xl mb-1">Scan QRIS</h2>
-            <p class="text-slate-500 text-sm mb-1">Total: <span class="font-black text-amber-600" x-text="'Rp ' + fmt(cartTotal)"></span></p>
-            <p class="text-xs text-emerald-600 font-semibold mb-4" x-show="qrisPolling">🔄 Menunggu konfirmasi pembayaran...</p>
+
+            <p class="text-slate-500 text-sm mb-3">Total: <span class="font-black text-amber-600" x-text="'Rp ' + fmt(orderResult?.total ?? cartTotal)"></span></p>
+            {{-- Rejection notice --}}
+            <template x-if="rejectionReason">
+                <div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-3 text-left">
+                    <p class="text-red-700 font-bold text-sm mb-1">❌ Pembayaran Ditolak</p>
+                    <p class="text-red-600 text-xs" x-text="rejectionReason"></p>
+                    <p class="text-xs text-slate-500 mt-2">Upload ulang bukti transfer yang benar di bawah.</p>
+                </div>
+            </template>
 
             <template x-if="qrisImageUrl">
                 <div>
                     <div class="flex justify-center mb-3">
                         <img :src="qrisImageUrl" alt="QRIS" class="w-64 h-64 object-contain border border-slate-200 rounded-2xl p-2">
                     </div>
-                    <p class="text-xs text-slate-400 mb-4">Scan QR di atas dengan e-wallet atau m-banking.<br>Pembayaran akan dikonfirmasi otomatis.</p>
+                    <template x-if="!isStaticQris">
+                        <p class="text-xs text-slate-400 mb-4">Scan QR di atas dengan e-wallet atau m-banking.<br>Pembayaran akan dikonfirmasi otomatis.</p>
+                    </template>
+                    <template x-if="isStaticQris">
+                        <p class="text-xs text-slate-400 mb-3">Scan QR di atas lalu transfer tepat sesuai nominal.<br>Upload bukti transfer setelah selesai.</p>
+                    </template>
                 </div>
             </template>
             <template x-if="!qrisImageUrl">
@@ -365,7 +398,48 @@
                 </div>
             </template>
 
-            <p class="text-xs text-slate-400 mt-2">Pembayaran akan terdeteksi otomatis setelah berhasil.</p>
+            {{-- Upload proof section (static QRIS only) --}}
+            <template x-if="isStaticQris">
+                <div class="mt-2">
+                    <template x-if="proofUploaded && !rejectionReason">
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
+                            <p class="text-emerald-700 font-bold text-sm mb-1">✅ Bukti Diterima</p>
+                            <p class="text-emerald-600 text-xs">🔄 Menunggu konfirmasi kasir...</p>
+                        </div>
+                    </template>
+                    <template x-if="!proofUploaded || rejectionReason">
+                        <div class="space-y-3">
+                            <label class="block">
+                                <span class="text-xs font-semibold text-slate-700 block mb-1.5">📎 Upload Bukti Transfer</span>
+                                <input type="file" accept="image/*" capture="environment"
+                                       @change="proofFile = $event.target.files[0]; rejectionReason = null"
+                                       class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer">
+                            </label>
+                            <button @click="uploadProof()"
+                                    :disabled="!proofFile || proofUploading"
+                                    :class="(!proofFile || proofUploading) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600 text-white'"
+                                    class="w-full font-semibold py-3 rounded-2xl text-sm transition-colors">
+                                <span x-text="proofUploading ? 'Mengupload...' : 'Kirim Bukti Transfer'"></span>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            {{-- Xendit simulate button (dev/test only) --}}
+            <template x-if="xenditTestMode && !isStaticQris">
+                <div class="mt-3">
+                    <button @click="simulateXenditPayment()"
+                            class="w-full border border-slate-300 text-slate-600 text-xs font-semibold py-2.5 rounded-2xl hover:bg-slate-50 transition-colors">
+                        🧪 Simulate Pembayaran (Test)
+                    </button>
+                </div>
+            </template>
+
+            <template x-if="!isStaticQris">
+                <p class="text-xs text-slate-400 mt-3">Pembayaran akan terdeteksi otomatis setelah berhasil.</p>
+            </template>
+            <p class="text-xs text-emerald-600 font-semibold mt-2" x-show="qrisPolling && !isStaticQris">🔄 Menunggu konfirmasi pembayaran...</p>
         </div>
     </div>
 
@@ -473,6 +547,12 @@ function qrMenu() {
         qrisPolling: false,
         _qrisTimer: null,
         _qrisOrderId: null,
+        isStaticQris: false,
+        xenditTestMode: false,
+        proofFile: null,
+        proofUploading: false,
+        proofUploaded: false,
+        rejectionReason: null,
 
         get filteredProducts() {
             const q = this.search.toLowerCase();
@@ -616,11 +696,17 @@ function qrMenu() {
 
                 const data = await res.json();
                 if (res.ok) {
-                    this.orderResult = data;
-                    this.showCart    = false;
+                    this.orderResult    = data;
+                    this.showCart       = false;
                     if (this.paymentMethod === 'qris') {
-                        this.qrisImageUrl = data.qris_image_url;
-                        this.showQris     = true;
+                        this.qrisImageUrl  = data.qris_image_url;
+                        this.isStaticQris  = data.is_static_qris ?? false;
+                        this.xenditTestMode= data.xendit_test_mode ?? false;
+                        this.proofFile     = null;
+                        this.proofUploading= false;
+                        this.proofUploaded = false;
+                        this.rejectionReason = null;
+                        this.showQris      = true;
                         this.startQrisPolling(data.order_id);
                     } else {
                         this.showSuccess = true;
@@ -661,10 +747,59 @@ function qrMenu() {
                             this.qrisPolling  = false;
                             this.showQris     = false;
                             this.showSuccess  = true;
+                        } else if (d.rejected) {
+                            clearInterval(this._qrisTimer);
+                            this.qrisPolling    = false;
+                            this.rejectionReason= d.rejection_reason || 'Pembayaran ditolak';
+                            this.proofUploaded  = false;
+                            this.proofFile      = null;
                         }
                     }
                 } catch (_) {}
             }, 2000);
+        },
+
+        async uploadProof() {
+            if (!this.proofFile || this.proofUploading) return;
+            this.proofUploading = true;
+            const token = '{{ $table->qr_token }}';
+            const orderId = this._qrisOrderId;
+            const form = new FormData();
+            form.append('proof', this.proofFile);
+            form.append('_token', CSRF);
+            try {
+                const res = await fetch(`/order/${token}/upload-proof/${orderId}`, {
+                    method: 'POST',
+                    body: form,
+                });
+                if (res.ok) {
+                    this.proofUploaded = true;
+                } else {
+                    const d = await res.json().catch(() => ({}));
+                    alert(d.message || 'Gagal upload bukti. Coba lagi.');
+                }
+            } catch (_) {
+                alert('Gagal terhubung ke server.');
+            }
+            this.proofUploading = false;
+        },
+
+        async simulateXenditPayment() {
+            const token = '{{ $table->qr_token }}';
+            const orderId = this._qrisOrderId;
+            try {
+                const res = await fetch(`/order/${token}/simulate-xendit/${orderId}`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                });
+                if (res.ok) {
+                    alert('Simulate sukses! Menunggu webhook...');
+                } else {
+                    alert('Simulate gagal.');
+                }
+            } catch (_) {
+                alert('Gagal terhubung.');
+            }
         },
 
         fmt(n) {

@@ -22,7 +22,7 @@ class Company extends Model
         'currency', 'timezone', 'tax_rate', 'tax_inclusive',
         'receipt_settings', 'is_active',
         'midtrans_server_key', 'midtrans_client_key', 'midtrans_is_production',
-        'xendit_secret_key', 'payment_provider',
+        'xendit_secret_key', 'payment_provider', 'qris_static_image', 'qris_static_string',
     ];
 
     protected $casts = [

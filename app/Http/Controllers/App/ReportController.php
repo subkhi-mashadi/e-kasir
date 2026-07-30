@@ -13,8 +13,30 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
+    private function hasReports(): bool
+    {
+        return (bool) auth()->user()->company?->hasFeature('feature_advanced_reports');
+    }
+
+    private function featureLockedResponse(): \Illuminate\View\View
+    {
+        return view('errors.feature-locked', [
+            'featureName' => 'Laporan Lanjutan',
+            'description' => 'Akses laporan penjualan harian, laporan per kasir, dan ekspor data ke Excel maupun PDF.',
+            'benefits'    => [
+                'Laporan penjualan dengan grafik per hari',
+                'Laporan per kasir untuk evaluasi tim',
+                'Ekspor ke Excel & PDF siap cetak',
+                'Top 10 produk terlaris',
+            ],
+        ]);
+    }
+
     public function sales(Request $request)
     {
+        if (!$this->hasReports()) {
+            return $this->featureLockedResponse();
+        }
         $branchId = session('branch_id') ?? auth()->user()->branch_id;
 
         $dari    = $request->filled('dari')   ? $request->dari   : today()->subDays(29)->format('Y-m-d');
@@ -70,6 +92,9 @@ class ReportController extends Controller
 
     public function perKasir(Request $request)
     {
+        if (!$this->hasReports()) {
+            return $this->featureLockedResponse();
+        }
         $branchId = session('branch_id') ?? auth()->user()->branch_id;
         $dari     = $request->filled('dari')   ? $request->dari   : today()->subDays(29)->format('Y-m-d');
         $sampai   = $request->filled('sampai') ? $request->sampai : today()->format('Y-m-d');
@@ -89,6 +114,7 @@ class ReportController extends Controller
 
     public function exportExcel(Request $request)
     {
+        abort_unless($this->hasReports(), 403);
         $branchId = session('branch_id') ?? auth()->user()->branch_id;
 
         $dari   = $request->filled('dari')   ? $request->dari   : today()->subDays(29)->format('Y-m-d');
@@ -139,6 +165,7 @@ class ReportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        abort_unless($this->hasReports(), 403);
         $branchId = session('branch_id') ?? auth()->user()->branch_id;
 
         $dari   = $request->filled('dari')   ? $request->dari   : today()->subDays(29)->format('Y-m-d');
@@ -182,6 +209,8 @@ class ReportController extends Controller
             'totalPendapatan', 'totalTransaksi', 'rataRata',
             'perHari', 'topProduk',
             'companyName', 'branchName',
-        ))->setPaper('a4', 'portrait')->download($filename);
+        ))
+        ->setPaper('a4', 'portrait')
+        ->download($filename);
     }
 }

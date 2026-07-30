@@ -1,37 +1,53 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Langganan — Postera</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="min-h-screen bg-slate-100">
+@extends('layouts.app')
 
-<div class="max-w-4xl mx-auto px-4 py-10">
+@section('title', 'Langganan')
+@section('page-title', 'Kelola Langganan')
+@section('page-subtitle', $company?->name)
 
-    {{-- Header --}}
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h1 class="text-2xl font-black text-slate-800">Kelola Langganan</h1>
-            <p class="text-slate-500 text-sm mt-1">{{ $company?->name }}</p>
-        </div>
-        @if (auth()->user()->isSuperAdmin() === false)
-        <a href="{{ route('app.dashboard') }}" class="text-sm text-slate-500 hover:text-slate-700">← Dashboard</a>
-        @endif
-    </div>
+@push('scripts')
+<script src="{{ config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
+<script>
+function checkout() {
+    const el = document.querySelector('[x-data]');
+    const comp = Alpine.$data(el);
+    if (!comp.selectedPlan || comp.processing) return;
+    comp.processing = true;
 
-    @if (session('success'))
-        <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 mb-6 text-sm">{{ session('success') }}</div>
-    @endif
-    @if (session('info'))
-        <div class="bg-blue-50 border border-blue-200 text-blue-700 rounded-xl px-4 py-3 mb-6 text-sm">{{ session('info') }}</div>
-    @endif
+    fetch('{{ route('subscription.checkout') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+        },
+        body: JSON.stringify({ plan_id: comp.selectedPlan, period: comp.period }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        snap.pay(data.snap_token, {
+            onSuccess: () => { window.location.href = '{{ route('subscription.callback') }}?invoice_id=' + data.invoice_id; },
+            onPending: () => { comp.processing = false; },
+            onError:   () => { comp.processing = false; alert('Pembayaran gagal.'); },
+            onClose:   () => { comp.processing = false; },
+        });
+    })
+    .catch(() => { comp.processing = false; alert('Gagal terhubung ke server.'); });
+}
+
+function payPending(token, invoiceId) {
+    snap.pay(token, {
+        onSuccess: () => { window.location.href = '{{ route('subscription.callback') }}?invoice_id=' + invoiceId; },
+        onClose:   () => {},
+    });
+}
+</script>
+@endpush
+
+@section('content')
+<div class="max-w-4xl mx-auto space-y-6">
 
     {{-- Current subscription --}}
     @if ($subscription)
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         <div class="flex items-start justify-between">
             <div>
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Paket Aktif</p>
@@ -139,7 +155,7 @@
 
     {{-- Pending invoice --}}
     @if ($pendingInvoice)
-    <div class="mt-8 bg-amber-50 border border-amber-200 rounded-2xl p-5">
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5">
         <p class="text-sm font-semibold text-amber-800 mb-1">Invoice Menunggu Pembayaran</p>
         <p class="text-xs text-amber-700">Invoice <span class="font-mono">{{ $pendingInvoice->invoice_no }}</span> — Rp {{ number_format($pendingInvoice->amount, 0, ',', '.') }}</p>
         @if ($pendingInvoice->midtrans_snap_token)
@@ -150,43 +166,6 @@
         @endif
     </div>
     @endif
+
 </div>
-
-<script src="{{ config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
-<script>
-function checkout() {
-    const el = document.querySelector('[x-data]');
-    const comp = Alpine.$data(el);
-    if (!comp.selectedPlan || comp.processing) return;
-    comp.processing = true;
-
-    fetch('{{ route('subscription.checkout') }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-        },
-        body: JSON.stringify({ plan_id: comp.selectedPlan, period: comp.period }),
-    })
-    .then(r => r.json())
-    .then(data => {
-        snap.pay(data.snap_token, {
-            onSuccess: () => { window.location.href = '{{ route('subscription.callback') }}?invoice_id=' + data.invoice_id; },
-            onPending: () => { comp.processing = false; },
-            onError:   () => { comp.processing = false; alert('Pembayaran gagal.'); },
-            onClose:   () => { comp.processing = false; },
-        });
-    })
-    .catch(() => { comp.processing = false; alert('Gagal terhubung ke server.'); });
-}
-
-function payPending(token, invoiceId) {
-    snap.pay(token, {
-        onSuccess: () => { window.location.href = '{{ route('subscription.callback') }}?invoice_id=' + invoiceId; },
-        onClose:   () => {},
-    });
-}
-</script>
-
-</body>
-</html>
+@endsection

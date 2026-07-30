@@ -57,6 +57,15 @@
                       placeholder="Alamat lengkap cabang">{{ old('address', $branch->address ?? '') }}</textarea>
         </div>
 
+        {{-- QRIS Static String --}}
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5" for="qris_static_string">String QRIS Statis (opsional)</label>
+            <p class="text-xs text-slate-400 mb-2">Paste string QRIS dari mesin EDC/merchant app. Sistem akan otomatis mengubahnya menjadi QRIS dinamis per transaksi.</p>
+            <textarea id="qris_static_string" name="qris_static_string" rows="3"
+                      placeholder="00020101021226..."
+                      class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono outline-none focus:border-amber-500 resize-none">{{ old('qris_static_string', $branch->qris_static_string ?? '') }}</textarea>
+        </div>
+
         {{-- QRIS Image --}}
         <div x-data="{preview: '{{ isset($branch) && $branch->qris_image ? Storage::url($branch->qris_image) : '' }}',
                        onFile(e){ const f=e.target.files[0]; if(f) this.preview=URL.createObjectURL(f); }}">

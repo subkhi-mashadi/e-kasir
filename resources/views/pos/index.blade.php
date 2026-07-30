@@ -449,11 +449,28 @@
                         <span class="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full" x-text="incomingOrders.length"></span>
                     </template>
                 </h3>
-                <button @click="showIncoming = false" class="text-slate-400 hover:text-slate-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
+                <div class="flex items-center gap-3">
+                    {{-- Volume control --}}
+                    <div class="flex items-center gap-1.5" title="Volume notifikasi">
+                        <button @click="notifVolume = notifVolume > 0 ? 0 : 0.7"
+                                :title="notifVolume === 0 ? 'Suara mati' : 'Suara aktif'"
+                                class="text-slate-400 hover:text-slate-600">
+                            <svg x-show="notifVolume === 0" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                            </svg>
+                            <svg x-show="notifVolume > 0" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m0 0l-4-4m4 4l4-4M9.172 9.172a4 4 0 000 5.656"/>
+                            </svg>
+                        </button>
+                        <input type="range" min="0" max="1" step="0.1" x-model.number="notifVolume"
+                               class="w-20 h-1.5 accent-amber-500 cursor-pointer">
+                    </div>
+                    <button @click="showIncoming = false" class="text-slate-400 hover:text-slate-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div x-show="incomingOrders.length === 0" class="flex items-center justify-center h-32 text-slate-400 text-sm">
@@ -491,20 +508,44 @@
                             <p class="text-xs mb-2">
                                 <span :class="order.preferred_payment === 'qris' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'"
                                       class="px-2 py-0.5 rounded-full font-semibold"
-                                      x-text="order.preferred_payment === 'qris' ? '📱 QRIS' : '💵 Tunai'">
+                                      x-text="order.preferred_payment === 'qris' ? '📱 QRIS Statis' : '💵 Tunai'">
                                 </span>
                             </p>
                         </template>
-                        <div class="flex gap-2">
-                            <button @click="openPaymentConfirm(order)"
-                                    class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2 rounded-xl transition-colors">
-                                ✓ Konfirmasi Bayar
-                            </button>
-                            <button @click="openRejectConfirm(order.id)"
-                                    class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold py-2 rounded-xl transition-colors">
-                                ✗ Tolak
-                            </button>
-                        </div>
+                        {{-- Bukti transfer (QRIS statis) --}}
+                        <template x-if="order.payment_proof_url">
+                            <div class="mb-3">
+                                <p class="text-xs text-slate-500 mb-1 font-semibold">Bukti Transfer:</p>
+                                <a :href="order.payment_proof_url" target="_blank">
+                                    <img :src="order.payment_proof_url" alt="Bukti"
+                                         class="w-full max-h-40 object-contain rounded-xl border border-slate-200 hover:opacity-80 transition-opacity cursor-zoom-in bg-slate-50">
+                                </a>
+                            </div>
+                        </template>
+                        <template x-if="order.payment_proof_url">
+                            <div class="flex gap-2">
+                                <button @click="approveQrisProof(order.id)"
+                                        class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2 rounded-xl transition-colors">
+                                    ✅ Setujui
+                                </button>
+                                <button @click="openRejectConfirm(order.id)"
+                                        class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold py-2 rounded-xl transition-colors">
+                                    ✗ Tolak
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="!order.payment_proof_url">
+                            <div class="flex gap-2">
+                                <button @click="openPaymentConfirm(order)"
+                                        class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2 rounded-xl transition-colors">
+                                    ✓ Konfirmasi Bayar
+                                </button>
+                                <button @click="openRejectConfirm(order.id)"
+                                        class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold py-2 rounded-xl transition-colors">
+                                    ✗ Tolak
+                                </button>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -723,6 +764,7 @@ function posApp() {
         showIncoming: false,
         incomingOrders: [],
         _pollTimer: null,
+        notifVolume: 0.7,
 
         // Ready orders (kitchen done)
         readyOrders: [],
@@ -868,7 +910,10 @@ function posApp() {
                     const prev = this.incomingOrders.length;
                     this.incomingOrders = data.orders;
                     // Auto-open panel when new order arrives
-                    if (data.orders.length > prev) this.showIncoming = true;
+                    if (data.orders.length > prev) {
+                        this.showIncoming = true;
+                        this.playNotifSound();
+                    }
                 }
             } catch (_) {}
         },
@@ -941,6 +986,38 @@ function posApp() {
                 });
                 this.readyOrders = this.readyOrders.filter(o => o.id !== orderId);
             } catch (_) {}
+        },
+
+        playNotifSound() {
+            if (this.notifVolume === 0) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const vol = ctx.createGain();
+                vol.gain.value = this.notifVolume;
+                vol.connect(ctx.destination);
+
+                [[880, 0, 0.15], [1100, 0.18, 0.15], [880, 0.36, 0.2]].forEach(([freq, start, dur]) => {
+                    const osc = ctx.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    osc.connect(vol);
+                    osc.start(ctx.currentTime + start);
+                    osc.stop(ctx.currentTime + start + dur);
+                });
+            } catch (_) {}
+        },
+
+        async approveQrisProof(orderId) {
+            const csrf = document.querySelector('meta[name=csrf-token]').content;
+            const res = await fetch(`/app/qris-verification/${orderId}/approve`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
+            });
+            if (res.ok) {
+                this.incomingOrders = this.incomingOrders.filter(o => o.id !== orderId);
+            } else {
+                alert('Gagal menyetujui. Coba lagi.');
+            }
         },
 
         openRejectConfirm(orderId) {

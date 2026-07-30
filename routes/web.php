@@ -18,6 +18,7 @@ use App\Http\Controllers\App\InventoryController;
 use App\Http\Controllers\App\ModifierGroupController;
 use App\Http\Controllers\App\ProductController;
 use App\Http\Controllers\App\StaffController;
+use App\Http\Controllers\App\QrisVerificationController;
 use App\Http\Controllers\App\TableController;
 use App\Http\Controllers\Kitchen\KitchenController;
 use App\Http\Controllers\Order\QrOrderController;
@@ -93,6 +94,9 @@ Route::middleware(['auth', 'tenant.active', 'branch.selected'])
 
         // Staff management (owner only)
         Route::resource('staff', StaffController::class)->except(['show']);
+        Route::get('qris-verification', [QrisVerificationController::class, 'index'])->name('app.qris-verification.index');
+        Route::post('qris-verification/{order}/approve', [QrisVerificationController::class, 'approve'])->name('app.qris-verification.approve');
+        Route::post('qris-verification/{order}/reject', [QrisVerificationController::class, 'reject'])->name('app.qris-verification.reject');
 
         // Settings (owner only)
         Route::get('/settings/payment', [SettingsController::class, 'payment'])->name('settings.payment');
@@ -121,6 +125,8 @@ Route::get('/order/{token}', [QrOrderController::class, 'show'])->name('order.sh
 Route::post('/order/{token}/submit', [QrOrderController::class, 'submit'])->name('order.submit')->middleware('throttle:20,1');
 Route::get('/order/{token}/history', [QrOrderController::class, 'history'])->name('order.history');
 Route::get('/order/{token}/payment-status/{orderId}', [QrOrderController::class, 'paymentStatus'])->name('order.payment-status');
+Route::post('/order/{token}/upload-proof/{orderId}', [QrOrderController::class, 'uploadProof'])->name('order.upload-proof');
+Route::post('/order/{token}/simulate-xendit/{orderId}', [QrOrderController::class, 'simulateXenditPayment'])->name('order.simulate-xendit');
 Route::get('/order-submitted', fn () => view('order.submitted'))->name('order.submitted');
 
 // ── Midtrans webhook ──────────────────────────────────────────────────────────

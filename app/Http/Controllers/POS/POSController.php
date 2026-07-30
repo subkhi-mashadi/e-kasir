@@ -274,7 +274,13 @@ class POSController extends Controller
             ->where('branch_id', $branchId)
             ->where('source', 'qr')
             ->where('status', 'open')
-            ->where('preferred_payment', 'cash')
+            ->where(function ($q) {
+                $q->where('preferred_payment', 'cash')
+                  ->orWhere(function ($q2) {
+                      $q2->where('preferred_payment', 'qris')
+                         ->whereNotNull('payment_proof');
+                  });
+            })
             ->latest()
             ->get()
             ->map(fn ($o) => [
@@ -285,6 +291,7 @@ class POSController extends Controller
                 'total'             => (float) $o->total,
                 'notes'             => $o->notes,
                 'created_at'        => $o->created_at->format('H:i'),
+                'payment_proof_url' => $o->payment_proof ? asset('storage/' . $o->payment_proof) : null,
                 'items'         => $o->items->map(fn ($i) => [
                     'product_name' => $i->product_name,
                     'variant_name' => $i->variant_name,

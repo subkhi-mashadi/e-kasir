@@ -20,6 +20,7 @@ class XenditService
     public function chargeQris(string $referenceId, int $amount): array
     {
         $response = Http::withBasicAuth($this->secretKey, '')
+            ->withHeaders(['api-version' => '2022-07-31'])
             ->post("{$this->baseUrl}/qr_codes", [
                 'reference_id' => $referenceId,
                 'type'         => 'DYNAMIC',
@@ -65,6 +66,22 @@ class XenditService
             'status' => $latest['status'] ?? null,
             'amount' => $latest['amount'] ?? null,
         ];
+    }
+
+    public function isTestMode(): bool
+    {
+        return str_starts_with($this->secretKey, 'xnd_development_');
+    }
+
+    public function simulatePayment(string $xenditQrId, int $amount): bool
+    {
+        $response = Http::withBasicAuth($this->secretKey, '')
+            ->withHeaders(['api-version' => '2022-07-31'])
+            ->post("{$this->baseUrl}/qr_codes/{$xenditQrId}/payments/simulate", [
+                'amount' => $amount,
+            ]);
+
+        return $response->successful();
     }
 
     public function verifyWebhookToken(string $token): bool

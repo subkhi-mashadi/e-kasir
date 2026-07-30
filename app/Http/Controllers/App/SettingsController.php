@@ -24,7 +24,8 @@ class SettingsController extends Controller
             'midtrans_client_key'    => 'nullable|string|max:500',
             'midtrans_is_production' => 'boolean',
             'xendit_secret_key'      => 'nullable|string|max:500',
-            'payment_provider'       => 'required|in:midtrans,xendit',
+            'payment_provider'       => 'required|in:midtrans,xendit,qris_static',
+            'qris_static_string'     => 'nullable|string',
         ]);
 
         $data['midtrans_is_production'] = $request->boolean('midtrans_is_production');

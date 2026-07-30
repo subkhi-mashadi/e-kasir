@@ -5,7 +5,8 @@
     <title>Laporan Penjualan</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #1e293b; background: #fff; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #1e293b; background: #fff; padding: 0; }
+        .wrap { padding: 16mm 18mm; }
 
         /* ── Header ─────────────────────────────────────────────────── */
         .header { padding: 20px 0 16px; border-bottom: 2px solid #f59e0b; margin-bottom: 20px; }
@@ -64,6 +65,7 @@
     </style>
 </head>
 <body>
+<div class="wrap">
 
     {{-- ── Header ──────────────────────────────────────────────── --}}
     <div class="header">
@@ -147,5 +149,6 @@
         Dicetak pada: {{ now()->translatedFormat('d F Y, H:i') }} &nbsp;|&nbsp; Postera &copy; {{ now()->year }}
     </div>
 
+</div>
 </body>
 </html>
