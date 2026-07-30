@@ -65,7 +65,7 @@
         </div>
 
         {{-- Midtrans section --}}
-        <div x-show="provider === 'midtrans'" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div x-show="provider === 'midtrans'" x-cloak class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100">
                 <h2 class="font-semibold text-slate-800">Midtrans Keys</h2>
                 <p class="text-sm text-slate-500 mt-0.5">Settings → Access Keys di dashboard Midtrans</p>
@@ -121,7 +121,7 @@
         </div>
 
         {{-- Xendit section --}}
-        <div x-show="provider === 'xendit'" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div x-show="provider === 'xendit'" x-cloak class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100">
                 <h2 class="font-semibold text-slate-800">Xendit Secret Key</h2>
                 <p class="text-sm text-slate-500 mt-0.5">Settings → API Keys di dashboard Xendit</p>
@@ -165,7 +165,7 @@
         </div>
 
         {{-- QRIS Statis section --}}
-        <div x-show="provider === 'qris_static'" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div x-show="provider === 'qris_static'" x-cloak class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100">
                 <h2 class="font-semibold text-slate-800">Gambar QRIS Statis</h2>
                 <p class="text-sm text-slate-500 mt-0.5">Upload gambar QRIS dari mesin EDC atau aplikasi merchant Anda</p>
@@ -242,7 +242,6 @@
                               placeholder="00020101021226..."
                               class="w-full border-2 border-slate-300 rounded-xl px-4 py-3 text-sm font-mono outline-none focus:border-emerald-400 resize-none">{{ old('qris_static_string', $company->qris_static_string ?? '') }}</textarea>
                     <p class="text-xs text-slate-400 mt-1.5">Salin dari aplikasi merchant atau mesin EDC — biasanya diawali <code class="bg-slate-100 px-1 rounded">000201</code></p>
-                </div>
                 </div>
 
                 @if($company->qris_static_string)
