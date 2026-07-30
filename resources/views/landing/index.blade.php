@@ -153,7 +153,7 @@
                 </div>
 
                 <h1 class="hero-h1 text-5xl md:text-6xl font-black text-white leading-tight mb-6">
-                    Kasir Digital<br>
+                    Kasir Digital Asli<br>
                     <span class="text-amber-400">Cerdas & Modern</span><br>
                     untuk Bisnis F&B
                 </h1>
