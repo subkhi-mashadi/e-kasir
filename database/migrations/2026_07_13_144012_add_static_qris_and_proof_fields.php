@@ -13,6 +13,7 @@ return new class extends Migration
         });
 
         Schema::table('orders', function (Blueprint $table) {
+            $table->string('xendit_qr_id')->nullable();
             $table->string('payment_proof')->nullable()->after('xendit_qr_id');
             $table->text('rejection_reason')->nullable()->after('payment_proof');
         });
@@ -24,7 +25,7 @@ return new class extends Migration
             $table->dropColumn('qris_static_string');
         });
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropColumn(['payment_proof', 'rejection_reason']);
+            $table->dropColumn(['xendit_qr_id', 'payment_proof', 'rejection_reason']);
         });
     }
 };
