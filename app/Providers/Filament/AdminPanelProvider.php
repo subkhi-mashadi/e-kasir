@@ -33,6 +33,8 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->brandLogo(asset('icons/logo.png'))
+            ->brandLogoHeight('4rem')
             ->navigationGroups([
                 NavigationGroup::make('SaaS'),
                 NavigationGroup::make('Pengguna'),

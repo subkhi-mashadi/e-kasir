@@ -176,7 +176,7 @@
                 </div>
 
                 {{-- Tutorial --}}
-                <div x-data="{ open: false }" class="border-2 border-dashed border-emerald-200 rounded-xl overflow-hidden">
+                <div x-data="{ open: true }" class="border-2 border-dashed border-emerald-200 rounded-xl overflow-hidden">
                     <button type="button" @click="open = !open"
                             class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-emerald-50 transition-colors">
                         <div class="flex items-center gap-2">
