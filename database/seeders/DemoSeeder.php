@@ -21,12 +21,14 @@ class DemoSeeder extends Seeder
             $company = Company::updateOrCreate(
                 ['slug' => 'demo-warung-kopi'],
                 [
-                    'name'      => 'Demo Warung Kopi',
-                    'phone'     => '081234567890',
-                    'currency'  => 'IDR',
-                    'timezone'  => 'Asia/Jakarta',
-                    'tax_rate'  => 0,
-                    'is_active' => true,
+                    'name'               => 'Demo Warung Kopi',
+                    'phone'              => '081234567890',
+                    'currency'           => 'IDR',
+                    'timezone'           => 'Asia/Jakarta',
+                    'tax_rate'           => 0,
+                    'is_active'          => true,
+                    'payment_provider'   => 'qris_static',
+                    'qris_static_string' => '00020101021126610016ID.CO.SHOPEE.WWW01189360091800219193490208219193490303UMI51440014ID.CO.QRIS.WWW0215ID10243642573360303UMI5204581253033605802ID5918Pisang Banana Boon6006BANTUL61055518362070703A0163048CF2',
                 ]
             );
 
