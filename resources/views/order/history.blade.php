@@ -74,6 +74,34 @@
                     <span class="text-sm font-black text-amber-600" x-text="'Rp ' + fmt(order.total)"></span>
                 </div>
 
+                {{-- Upload bukti transfer (menunggu konfirmasi kasir) --}}
+                <template x-if="order.status === 'open' && order.preferred_payment === 'qris'">
+                    <div class="px-4 py-3 border-t border-slate-100 space-y-2">
+                        <template x-if="order.rejection_reason">
+                            <p class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                                ❌ Bukti ditolak: <span x-text="order.rejection_reason"></span> — upload ulang di bawah ini.
+                            </p>
+                        </template>
+                        <template x-if="order.payment_proof_url && !order.rejection_reason">
+                            <p class="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                                ✅ Bukti diterima — menunggu konfirmasi kasir.
+                            </p>
+                        </template>
+                        <label class="block">
+                            <span class="text-xs font-semibold text-slate-700 block mb-1.5" x-text="order.payment_proof_url ? '📎 Upload Ulang Bukti' : '📎 Upload Bukti Transfer'"></span>
+                            <input type="file" accept="image/*"
+                                   @change="proofFiles[order.id] = $event.target.files[0]"
+                                   class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer">
+                        </label>
+                        <button @click="uploadProof(order.id)"
+                                :disabled="!proofFiles[order.id] || uploading[order.id]"
+                                :class="(!proofFiles[order.id] || uploading[order.id]) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600 text-white'"
+                                class="w-full font-semibold py-2.5 rounded-2xl text-xs transition-colors">
+                            <span x-text="uploading[order.id] ? 'Mengupload...' : 'Kirim Bukti Transfer'"></span>
+                        </button>
+                    </div>
+                </template>
+
                 {{-- Kitchen status progress --}}
                 <div x-show="order.status === 'paid'" class="px-4 py-3 border-t border-slate-100">
                     <div class="flex items-center gap-1.5">
@@ -109,11 +137,15 @@
 
 <script>
 const HISTORY_URL = '{{ route('order.history', $table->qr_token) }}';
+const TOKEN = '{{ $table->qr_token }}';
+const CSRF = '{{ csrf_token() }}';
 
 function orderHistory() {
     return {
         orders: @json($orders),
         loading: false,
+        proofFiles: {},
+        uploading: {},
 
         kitchenSteps: [
             { key: 'pending',    label: 'Dikonfirmasi' },
@@ -136,7 +168,37 @@ function orderHistory() {
             } catch (_) {}
         },
 
+        async uploadProof(orderId) {
+            const file = this.proofFiles[orderId];
+            if (!file) return;
+
+            this.uploading[orderId] = true;
+            try {
+                const form = new FormData();
+                form.append('proof', file);
+                form.append('_token', CSRF);
+
+                const res = await fetch(`/order/${TOKEN}/upload-proof/${orderId}`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                    body: form,
+                });
+
+                if (res.ok) {
+                    delete this.proofFiles[orderId];
+                    await this.refresh();
+                } else {
+                    alert('Gagal upload bukti, coba lagi.');
+                }
+            } catch (_) {
+                alert('Gagal upload bukti, coba lagi.');
+            } finally {
+                this.uploading[orderId] = false;
+            }
+        },
+
         statusLabel(order) {
+            if (order.status === 'failed') return 'Kadaluarsa';
             if (order.status === 'cancelled') return 'Dibatalkan';
             if (order.status === 'open') return 'Menunggu Kasir';
             // paid
@@ -150,6 +212,7 @@ function orderHistory() {
         },
 
         statusClass(order) {
+            if (order.status === 'failed') return 'bg-red-100 text-red-600';
             if (order.status === 'cancelled') return 'bg-red-100 text-red-600';
             if (order.status === 'open') return 'bg-amber-100 text-amber-700';
             if (order.kitchen_status === 'ready') return 'bg-emerald-500 text-white animate-pulse';

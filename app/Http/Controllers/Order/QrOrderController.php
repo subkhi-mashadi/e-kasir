@@ -450,6 +450,8 @@ class QrOrderController extends Controller
                 'status'            => $o->status,
                 'kitchen_status'    => $o->kitchen_status,
                 'preferred_payment' => $o->preferred_payment,
+                'payment_proof_url' => $o->payment_proof ? asset('storage/' . $o->payment_proof) : null,
+                'rejection_reason'  => $o->rejection_reason,
                 'created_at'        => $o->created_at->format('H:i'),
                 'items'             => $o->items->map(fn ($i) => [
                     'product_name' => $i->product_name,

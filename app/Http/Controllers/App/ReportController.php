@@ -109,7 +109,15 @@ class ReportController extends Controller
             ->orderByDesc('pendapatan')
             ->get();
 
-        return view('app.reports.per-kasir', compact('dari', 'sampai', 'perKasir'));
+        $transaksi = Order::with(['user:id,name', 'payments'])
+            ->where('branch_id', $branchId)
+            ->where('status', 'paid')
+            ->whereDate('created_at', '>=', $dari)
+            ->whereDate('created_at', '<=', $sampai)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('app.reports.per-kasir', compact('dari', 'sampai', 'perKasir', 'transaksi'));
     }
 
     public function exportExcel(Request $request)
