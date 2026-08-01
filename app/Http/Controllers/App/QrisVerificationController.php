@@ -11,7 +11,7 @@ class QrisVerificationController extends Controller
 {
     public function index()
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $orders = Order::with(['items', 'table'])
             ->where('branch_id', $branchId)
@@ -25,7 +25,7 @@ class QrisVerificationController extends Controller
 
     public function approve(Order $order)
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
         abort_if($order->branch_id !== (int) $branchId, 403);
         abort_if($order->status !== 'open', 422);
 
@@ -57,7 +57,7 @@ class QrisVerificationController extends Controller
 
     public function reject(Request $request, Order $order)
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
         abort_if($order->branch_id !== (int) $branchId, 403);
         abort_if($order->status !== 'open', 422);
 

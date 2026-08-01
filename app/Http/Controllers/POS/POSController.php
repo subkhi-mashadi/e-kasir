@@ -22,7 +22,7 @@ class POSController extends Controller
 {
     public function index()
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
         $branch   = Branch::find($branchId);
         $tables   = Table::where('branch_id', $branchId)->where('is_active', true)->orderBy('name')->get(['id', 'name', 'capacity']);
         $customers = Customer::where('is_active', true)->orderBy('name')->get(['id', 'name', 'phone']);
@@ -32,7 +32,7 @@ class POSController extends Controller
 
     public function products()
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $products = Product::with([
             'category:id,name,icon',
@@ -104,7 +104,7 @@ class POSController extends Controller
             'items.*.modifiers.*.modifier_option_id' => 'required|exists:modifier_options,id',
         ]);
 
-        $branchId    = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId    = auth()->user()->activeBranchId();
         $companyTax  = (float) (auth()->user()->company?->tax_rate ?? 0);
         $orderId     = null;
 
@@ -257,7 +257,7 @@ class POSController extends Controller
 
     public function orders(Request $request)
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
         $orders = Order::with(['items', 'payments', 'table', 'user'])
             ->where('branch_id', $branchId)
             ->latest()
@@ -268,7 +268,7 @@ class POSController extends Controller
 
     public function incomingOrders()
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $orders = Order::with(['items.modifiers', 'table'])
             ->where('branch_id', $branchId)
@@ -306,7 +306,7 @@ class POSController extends Controller
 
     public function acceptOrder(Request $request, Order $order)
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         abort_if($order->branch_id !== (int) $branchId, 403);
         abort_if($order->status !== 'open', 422, 'Pesanan sudah diproses.');
@@ -350,7 +350,7 @@ class POSController extends Controller
 
     public function readyOrders()
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $orders = Order::with(['table'])
             ->where('branch_id', $branchId)
@@ -371,7 +371,7 @@ class POSController extends Controller
 
     public function rejectOrder(Order $order)
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         abort_if($order->branch_id !== (int) $branchId, 403);
         abort_if($order->status !== 'open', 422, 'Pesanan sudah diproses.');

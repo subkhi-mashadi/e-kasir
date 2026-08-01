@@ -11,7 +11,7 @@ class KitchenController extends Controller
 {
     public function index()
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
         $branch   = Branch::find($branchId);
 
         return view('kitchen.display', compact('branch'));
@@ -19,7 +19,7 @@ class KitchenController extends Controller
 
     public function orders()
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $orders = Order::with(['items.modifiers', 'table'])
             ->where('branch_id', $branchId)
@@ -50,7 +50,7 @@ class KitchenController extends Controller
 
     public function updateStatus(Request $request, Order $order)
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         abort_if($order->branch_id !== (int) $branchId, 403);
         abort_if($order->status !== 'paid', 422, 'Pesanan belum dibayar.');

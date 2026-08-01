@@ -10,7 +10,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $query = Order::with(['table', 'items'])
             ->where('branch_id', $branchId)
@@ -44,7 +44,7 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
         abort_unless($order->branch_id === (int) $branchId, 403);
 
         $order->load(['items.product', 'items.modifiers', 'table', 'payments', 'user']);

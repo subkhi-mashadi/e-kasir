@@ -12,7 +12,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
         $user     = auth()->user();
 
         $todayOrders = Order::where('branch_id', $branchId)

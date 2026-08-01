@@ -136,7 +136,7 @@
                         class="w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-2xl py-4 flex items-center justify-between px-5 shadow-xl transition-colors">
                     <span class="bg-white/20 rounded-xl px-2 py-0.5 text-sm font-bold" x-text="cartCount + ' item'"></span>
                     <span class="font-bold text-base">Lihat Keranjang</span>
-                    <span class="font-black text-base" x-text="'Rp ' + fmt(cartTotal)"></span>
+                    <span class="font-black text-base" x-text="'Rp ' + fmt(cartGrandTotal)"></span>
                 </button>
             </div>
         </div>
@@ -323,26 +323,26 @@
             </div>
 
             <div class="px-5 py-3 border-t border-slate-100 space-y-1.5">
-                <template x-if="{{ $company->tax_rate > 0 ? 'true' : 'false' }}">
+                <template x-if="cartTax > 0">
                     <div>
                         <div class="flex justify-between text-sm text-slate-500">
                             <span>Subtotal</span>
                             <span x-text="'Rp ' + fmt(cartTotal)"></span>
                         </div>
                         <div class="flex justify-between text-sm text-slate-500">
-                            <span>PPN {{ $company->tax_inclusive ? '(sudah termasuk)' : round($company->tax_rate) . '%' }}</span>
-                            <span x-text="'Rp ' + fmt({{ $company->tax_inclusive ? 'Math.round(cartTotal - cartTotal / (1 + ' . ($company->tax_rate / 100) . '))' : 'Math.round(cartTotal * ' . ($company->tax_rate / 100) . ')' }})"></span>
+                            <span>PPN</span>
+                            <span x-text="'Rp ' + fmt(cartTax)"></span>
                         </div>
                         <div class="flex justify-between text-base font-black text-amber-600 pt-1.5 border-t border-slate-100 mt-1">
                             <span>Total</span>
-                            <span x-text="'Rp ' + fmt({{ $company->tax_inclusive ? 'cartTotal' : 'Math.round(cartTotal * ' . (1 + $company->tax_rate / 100) . ')' }})"></span>
+                            <span x-text="'Rp ' + fmt(cartGrandTotal)"></span>
                         </div>
                     </div>
                 </template>
-                <template x-if="{{ $company->tax_rate > 0 ? 'false' : 'true' }}">
+                <template x-if="cartTax === 0">
                     <div class="flex justify-between items-center">
                         <span class="text-slate-500 text-sm">Total</span>
-                        <span class="font-black text-amber-600 text-xl" x-text="'Rp ' + fmt(cartTotal)"></span>
+                        <span class="font-black text-amber-600 text-xl" x-text="'Rp ' + fmt(cartGrandTotal)"></span>
                     </div>
                 </template>
             </div>
@@ -581,6 +581,14 @@ function qrMenu() {
             return this.cart.reduce((s, i) => s + i.subtotal, 0);
         },
 
+        get cartTax() {
+            return Math.round(this.cart.reduce((s, i) => s + (i.subtotal * ((i.tax_rate || 0) / 100)), 0));
+        },
+
+        get cartGrandTotal() {
+            return this.cartTotal + this.cartTax;
+        },
+
         openProduct(product) {
             if (!product.is_available) return;
             if (product.variants.length === 0 && product.modifier_groups.length === 0) {
@@ -644,6 +652,7 @@ function qrMenu() {
                     product_name: product.name,
                     variant_name: variant?.name || null,
                     unit_price: unitPrice,
+                    tax_rate: product.tax_rate || 0,
                     qty,
                     subtotal: unitPrice * qty,
                     notes,

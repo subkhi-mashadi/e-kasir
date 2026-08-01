@@ -47,7 +47,7 @@ class SyncOrderController extends Controller
             ]);
         }
 
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
         $orderId  = null;
 
         DB::transaction(function () use ($data, $branchId, &$orderId) {

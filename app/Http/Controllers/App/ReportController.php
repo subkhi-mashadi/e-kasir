@@ -37,7 +37,7 @@ class ReportController extends Controller
         if (!$this->hasReports()) {
             return $this->featureLockedResponse();
         }
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $dari    = $request->filled('dari')   ? $request->dari   : today()->subDays(29)->format('Y-m-d');
         $sampai  = $request->filled('sampai') ? $request->sampai : today()->format('Y-m-d');
@@ -95,7 +95,7 @@ class ReportController extends Controller
         if (!$this->hasReports()) {
             return $this->featureLockedResponse();
         }
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
         $dari     = $request->filled('dari')   ? $request->dari   : today()->subDays(29)->format('Y-m-d');
         $sampai   = $request->filled('sampai') ? $request->sampai : today()->format('Y-m-d');
 
@@ -123,7 +123,7 @@ class ReportController extends Controller
     public function exportExcel(Request $request)
     {
         abort_unless($this->hasReports(), 403);
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $dari   = $request->filled('dari')   ? $request->dari   : today()->subDays(29)->format('Y-m-d');
         $sampai = $request->filled('sampai') ? $request->sampai : today()->format('Y-m-d');
@@ -174,7 +174,7 @@ class ReportController extends Controller
     public function exportPdf(Request $request)
     {
         abort_unless($this->hasReports(), 403);
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $dari   = $request->filled('dari')   ? $request->dari   : today()->subDays(29)->format('Y-m-d');
         $sampai = $request->filled('sampai') ? $request->sampai : today()->format('Y-m-d');

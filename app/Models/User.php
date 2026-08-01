@@ -50,4 +50,14 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasRole('super_admin');
     }
+
+    /**
+     * Staff tied to one branch always stay on that branch, regardless of
+     * any stray session value. Only owners/managers without a fixed branch
+     * (who must pick one per session) fall back to the session choice.
+     */
+    public function activeBranchId(): ?int
+    {
+        return $this->branch_id ?? session('branch_id');
+    }
 }

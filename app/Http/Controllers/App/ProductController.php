@@ -16,7 +16,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $branchId = session('branch_id') ?? auth()->user()->branch_id;
+        $branchId = auth()->user()->activeBranchId();
 
         $query = Product::with(['category', 'inventories' => fn ($q) => $q->where('branch_id', $branchId)])
             ->when($request->search, fn ($q) => $q->where('name', 'like', "%{$request->search}%"))
