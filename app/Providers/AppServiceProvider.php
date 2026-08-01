@@ -14,8 +14,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // 2. Tambahkan baris ini di dalam boot()
-        if (config('app.env') !== 'local' || request()->server('HTTP_X_FORWARDED_PROTO') == 'https') {
+        if (request()->server('HTTP_X_FORWARDED_PROTO') === 'https' || request()->isSecure()) {
             URL::forceScheme('https');
         }
     }
