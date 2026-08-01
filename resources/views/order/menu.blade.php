@@ -411,7 +411,7 @@
                         <div class="space-y-3">
                             <label class="block">
                                 <span class="text-xs font-semibold text-slate-700 block mb-1.5">📎 Upload Bukti Transfer</span>
-                                <input type="file" accept="image/*" capture="environment"
+                                <input type="file" accept="image/*"
                                        @change="proofFile = $event.target.files[0]; rejectionReason = null"
                                        class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer">
                             </label>
