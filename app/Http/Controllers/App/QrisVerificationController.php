@@ -43,6 +43,7 @@ class QrisVerificationController extends Controller
             'paid_amount'     => $order->total,
             'invoice_no'      => $invoiceNo,
             'rejection_reason'=> null,
+            'user_id'         => auth()->id(),
             'synced_at'       => now(),
         ]);
 
