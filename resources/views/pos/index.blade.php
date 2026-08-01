@@ -864,7 +864,7 @@ function posApp() {
             this.pollIncoming();
             this.pollReady();
             this.updatePendingCount();
-            this._pollTimer = setInterval(() => { this.pollIncoming(); this.pollReady(); }, 15000);
+            this._pollTimer = setInterval(() => { this.pollIncoming(); this.pollReady(); }, 1000);
 
             // Offline sync
             window.addEventListener('online', () => {
