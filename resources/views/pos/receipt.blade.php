@@ -2,6 +2,7 @@
 @section('title', 'Struk — ' . $order->invoice_no)
 
 @section('content')
+@php $paperWidth = $order->branch?->receipt_paper_width ?? 80; @endphp
 <div class="flex flex-col items-center justify-start h-[calc(100vh-3rem)] overflow-y-auto bg-slate-100 py-8 px-4">
 
     <div class="w-full max-w-sm">
@@ -146,10 +147,27 @@
 </div>
 
 <style>
+@page {
+    size: {{ $paperWidth }}mm auto;
+    margin: 0;
+}
 @media print {
+    html, body {
+        width: {{ $paperWidth }}mm;
+        margin: 0;
+        padding: 0;
+    }
     body * { visibility: hidden; }
     #receipt, #receipt * { visibility: visible; }
-    #receipt { position: absolute; left: 0; top: 0; width: 80mm; }
+    #receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: {{ $paperWidth }}mm;
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+    }
     .print\:hidden { display: none; }
 }
 </style>

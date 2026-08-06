@@ -29,6 +29,7 @@ class BranchController extends Controller
             'address'            => 'nullable|string',
             'qris_image'         => 'nullable|image|max:2048',
             'qris_static_string' => 'nullable|string',
+            'receipt_paper_width' => 'nullable|in:58,80',
             'is_active'          => 'boolean',
         ]);
         $company = auth()->user()->company;
@@ -37,6 +38,7 @@ class BranchController extends Controller
         }
         $data['company_id'] = auth()->user()->company_id;
         $data['is_active']  = $request->boolean('is_active', true);
+        $data['receipt_paper_width'] = $data['receipt_paper_width'] ?? 80;
         if ($request->hasFile('qris_image')) {
             $data['qris_image'] = $request->file('qris_image')->store('qris', 'public');
         }
@@ -57,9 +59,11 @@ class BranchController extends Controller
             'phone'      => 'nullable|string|max:20',
             'address'    => 'nullable|string',
             'qris_image' => 'nullable|image|max:2048',
+            'receipt_paper_width' => 'nullable|in:58,80',
             'is_active'  => 'boolean',
         ]);
         $data['is_active'] = $request->boolean('is_active', true);
+        $data['receipt_paper_width'] = $data['receipt_paper_width'] ?? $branch->receipt_paper_width;
         if ($request->hasFile('qris_image')) {
             if ($branch->qris_image) {
                 Storage::disk('public')->delete($branch->qris_image);

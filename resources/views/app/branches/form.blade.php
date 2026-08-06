@@ -80,6 +80,17 @@
                    class="w-full text-sm text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer">
         </div>
 
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5" for="receipt_paper_width">Ukuran Kertas Printer Struk</label>
+            <select id="receipt_paper_width" name="receipt_paper_width"
+                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-amber-500">
+                @php $paperWidth = old('receipt_paper_width', $branch->receipt_paper_width ?? 80); @endphp
+                <option value="58" {{ (int) $paperWidth === 58 ? 'selected' : '' }}>58mm (thermal kecil)</option>
+                <option value="80" {{ (int) $paperWidth === 80 ? 'selected' : '' }}>80mm (standar)</option>
+            </select>
+            <p class="text-xs text-slate-400 mt-1.5">Sesuaikan dengan ukuran kertas printer thermal cabang ini, biar struk gak melebar/kepotong.</p>
+        </div>
+
         <div class="flex items-center gap-3 pt-1">
             <input type="hidden" name="is_active" value="0">
             <input type="checkbox" id="is_active" name="is_active" value="1"

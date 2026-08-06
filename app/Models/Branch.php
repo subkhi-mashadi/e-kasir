@@ -11,6 +11,7 @@ class Branch extends Model
 
     protected $fillable = [
         'company_id', 'name', 'code', 'phone', 'address', 'qris_image', 'qris_static_string', 'is_active',
+        'receipt_paper_width',
     ];
 
     protected $casts = [
